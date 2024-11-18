@@ -26,7 +26,6 @@ amqp.connect('amqp://localhost', (error0, connection) => {
     channel.consume(queue, (msg) => {
       const order = JSON.parse(msg.content.toString());
       console.log("Received order:", order);
-      // Aqui você pode processar o pedido, como atualizar o estoque ou realizar outra ação
     }, {
         noAck: true
     });
