@@ -5,8 +5,8 @@ const app = express();
 app.use(express.json());
 
 let products = [
-  { id: 1, name: 'Product 1', price: 100 },
-  { id: 2, name: 'Product 2', price: 200 }
+  { id: 1, name: 'Product 1', price: 10.0 },
+  { id: 2, name: 'Product 2', price: 7.5 }
 ];
 
 let channel, connection;
@@ -41,17 +41,17 @@ async function consumeOrders() {
   channel.consume(QUEUE, processOrder, { noAck: false });
 }
 
-app.get('/products', (req, res) => {
+app.get('/Products/GetAll', (req, res) => {
   res.json(products);
 });
 
-app.get('/products/:id', (req, res) => {
+app.get('/Products/GetById/:id', (req, res) => {
   const product = products.find(p => p.id === parseInt(req.params.id));
   if (!product) return res.status(404).json({ message: 'Product not found' });
   res.json(product);
 });
 
-app.post('/products', (req, res) => {
+app.post('/Products/Create', (req, res) => {
   const newProduct = {
     id: products.length + 1,
     name: req.body.name,
@@ -61,7 +61,7 @@ app.post('/products', (req, res) => {
   res.status(201).json(newProduct);
 });
 
-app.put('/products/:id', (req, res) => {
+app.put('/Products/Update/:id', (req, res) => {
   const product = products.find(p => p.id === parseInt(req.params.id));
   if (!product) return res.status(404).json({ message: 'Product not found' });
 
@@ -70,7 +70,7 @@ app.put('/products/:id', (req, res) => {
   res.json(product);
 });
 
-app.delete('/products/:id', (req, res) => {
+app.delete('/Products/Delete/:id', (req, res) => {
   products = products.filter(p => p.id !== parseInt(req.params.id));
   res.status(204).send();
 });
