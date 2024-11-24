@@ -11,7 +11,7 @@ let orders = [
 ];
 
 let channel, connection;
-const QUEUE = 'pedidoQueue';
+const QUEUE = 'orderQueue';
 
 // Conectar ao RabbitMQ
 async function connectRabbitMQ() {
@@ -19,18 +19,16 @@ async function connectRabbitMQ() {
     connection = await amqp.connect('amqp://localhost');
     channel = await connection.createChannel();
     await channel.assertQueue(QUEUE);
-    console.log('Orders API conectada ao RabbitMQ');
+    console.log('Orders API connected to RabbitMQ');
   } catch (error) {
-    console.error('Erro ao conectar ao RabbitMQ:', error);
+    console.error('Error in RabbitMQ connection:', error);
   }
 }
 
-// Rota para obter todos os pedidos
 app.get('/orders', (req, res) => {
   res.json(orders);
 });
 
-// Rota para obter um pedido específico
 app.get('/orders/:id', async (req, res) => {
   const order = orders.find(o => o.id === parseInt(req.params.id));
   if (!order) return res.status(404).json({ message: 'Order not found' });
@@ -46,7 +44,6 @@ app.get('/orders/:id', async (req, res) => {
   }
 });
 
-// Rota para criar um novo pedido
 app.post('/orders', async (req, res) => {
   const newOrder = {
     id: orders.length + 1,
@@ -61,11 +58,10 @@ app.post('/orders', async (req, res) => {
     channel.sendToQueue(QUEUE, Buffer.from(message));
     res.status(201).json(newOrder);
   } catch (error) {
-    res.status(500).json({ message: 'Erro ao enviar o pedido para o RabbitMQ', error: error.message });
+    res.status(500).json({ message: 'Error while trying to send order to RabbitMQ', error: error.message });
   }
 });
 
-// Rota para editar um pedido existente
 app.put('/orders/:id', (req, res) => {
   const order = orders.find(o => o.id === parseInt(req.params.id));
   if (!order) return res.status(404).json({ message: 'Order not found' });
@@ -75,13 +71,12 @@ app.put('/orders/:id', (req, res) => {
   res.json(order);
 });
 
-// Rota para excluir um pedido
 app.delete('/orders/:id', (req, res) => {
   orders = orders.filter(o => o.id !== parseInt(req.params.id));
   res.status(204).send();
 });
 
 app.listen(3000, () => {
-  console.log('Orders API rodando em http://localhost:3000');
+  console.log('Orders API running in http://localhost:3000');
   connectRabbitMQ();
 });
