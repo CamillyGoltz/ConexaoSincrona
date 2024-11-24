@@ -1,8 +1,7 @@
 const express = require('express');
-const axios = require('axios');
-const amqp = require('amqplib/callback_api'); // Importando a biblioteca RabbitMQ
-const app = express();
+const amqp = require('amqplib');
 
+const app = express();
 app.use(express.json());
 
 let orders = [
@@ -10,21 +9,18 @@ let orders = [
   { id: 2, customer: 'Cliente 2', products: [2] }
 ];
 
-// Conexão com o RabbitMQ
-let channel;
-amqp.connect('amqp://localhost', (error0, connection) => {
-  if (error0) {
-    throw error0;
-  }
-  connection.createChannel((error1, ch) => {
-    if (error1) {
-      throw error1;
-    }
-    channel = ch;
-    const queue = 'orders_queue';
-    ch.assertQueue(queue, { durable: false });
-  });
-});
+// RabbitMQ setup
+const RABBITMQ_URL = 'amqp://localhost';
+let channel, connection;
+
+// Connect to RabbitMQ
+async function connectRabbitMQ() {
+  connection = await amqp.connect(RABBITMQ_URL);
+  channel = await connection.createChannel();
+  await channel.assertQueue('product_requests');
+  await channel.assertQueue('product_responses');
+}
+connectRabbitMQ();
 
 app.get('/orders', (req, res) => {
   res.json(orders);
@@ -36,14 +32,41 @@ app.get('/orders/:id', async (req, res) => {
 
   try {
     const productDetails = await Promise.all(
-      order.products.map(productId => axios.get(`http://localhost:3001/products/${productId}`))
+      order.products.map(productId => getProductDetails(productId))
     );
-    const products = productDetails.map(response => response.data);
-    res.json({ ...order, products });
+    res.json({ ...order, products: productDetails });
   } catch (error) {
     res.status(500).json({ message: 'Error getting products', error: error.message });
   }
 });
+
+// Request product details via RabbitMQ
+async function getProductDetails(productId) {
+  return new Promise((resolve, reject) => {
+    const correlationId = generateCorrelationId();
+
+    channel.sendToQueue('product_requests', Buffer.from(JSON.stringify({ productId })), {
+      correlationId,
+      replyTo: 'product_responses'
+    });
+
+    // Listen for the response
+    channel.consume(
+      'product_responses',
+      msg => {
+        if (msg.properties.correlationId === correlationId) {
+          resolve(JSON.parse(msg.content.toString()));
+          channel.ack(msg);
+        }
+      },
+      { noAck: false }
+    );
+  });
+}
+
+function generateCorrelationId() {
+  return Math.random().toString() + Date.now();
+}
 
 app.post('/orders', (req, res) => {
   const newOrder = {
@@ -52,11 +75,6 @@ app.post('/orders', (req, res) => {
     products: req.body.products
   };
   orders.push(newOrder);
-  
-  // Enviando mensagem para a fila RabbitMQ
-  const queue = 'orders_queue';
-  channel.sendToQueue(queue, Buffer.from(JSON.stringify(newOrder)));
-
   res.status(201).json(newOrder);
 });
 

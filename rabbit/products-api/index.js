@@ -1,7 +1,7 @@
 const express = require('express');
-const amqp = require('amqplib/callback_api'); // Importando a biblioteca RabbitMQ
-const app = express();
+const amqp = require('amqplib');
 
+const app = express();
 app.use(express.json());
 
 let products = [
@@ -9,37 +9,41 @@ let products = [
   { id: 2, name: 'Product 2', price: 200 }
 ];
 
-// Conexão com o RabbitMQ
-amqp.connect('amqp://localhost', (error0, connection) => {
-  if (error0) {
-    throw error0;
-  }
-  connection.createChannel((error1, channel) => {
-    if (error1) {
-      throw error1;
-    }
-    const queue = 'orders_queue';
+// RabbitMQ setup
+const RABBITMQ_URL = 'amqp://localhost';
+let channel, connection;
 
-    channel.assertQueue(queue, { durable: false });
-    console.log(`Waiting for messages in ${queue}. To exit press CTRL+C`);
+// Connect to RabbitMQ
+async function connectRabbitMQ() {
+  connection = await amqp.connect(RABBITMQ_URL);
+  channel = await connection.createChannel();
+  await channel.assertQueue('product_requests');
+  await channel.assertQueue('product_responses');
 
-    channel.consume(queue, (msg) => {
-      const order = JSON.parse(msg.content.toString());
-      console.log("Received order:", order);
-    }, {
-        noAck: true
-    });
-  });
-});
+  // Listen for messages
+  channel.consume(
+    'product_requests',
+    msg => {
+      const { productId } = JSON.parse(msg.content.toString());
+      const product = products.find(p => p.id === productId);
+
+      const response = product
+        ? JSON.stringify(product)
+        : JSON.stringify({ error: 'Product not found' });
+
+      channel.sendToQueue(msg.properties.replyTo, Buffer.from(response), {
+        correlationId: msg.properties.correlationId
+      });
+
+      channel.ack(msg);
+    },
+    { noAck: false }
+  );
+}
+connectRabbitMQ();
 
 app.get('/products', (req, res) => {
   res.json(products);
-});
-
-app.get('/products/:id', (req, res) => {
-  const product = products.find(p => p.id === parseInt(req.params.id));
-  if (!product) return res.status(404).json({ message: 'Product not found' });
-  res.json(product);
 });
 
 app.post('/products', (req, res) => {
