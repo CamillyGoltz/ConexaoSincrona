@@ -4,12 +4,12 @@ const app = express();
 
 app.use(express.json());
 
-let orders = [
-  { id: 1, customer: 'Cliente 1', products: [1, 2] },
-  { id: 2, customer: 'Cliente 2', products: [2] }
+let = [
+  { id: 1, customer: 'Customer 1', productsId: [1, 2] },
+  { id: 2, customer: 'Customer 2', productsId: [2] }
 ];
 
-app.post('/rpc', async (req, res) => {
+app.post('/Orders', async (req, res) => {
   const { jsonrpc, method, params, id } = req.body;
 
   if (jsonrpc !== '2.0') {
@@ -18,50 +18,56 @@ app.post('/rpc', async (req, res) => {
 
   try {
     switch (method) {
-      case 'getAllOrders':
-        res.json({ jsonrpc: '2.0', result: orders, id });
+      case 'Create':
+        const newOrder = {
+          id: ordersList.length + 1,
+          customer: params.customer,
+          products: params.products
+        };
+
+        ordersList.push(newOrder);
+        res.json({ jsonrpc: '2.0', result: newOrder, id });
         break;
 
-      case 'getOrderById':
-        const order = orders.find(o => o.id === parseInt(params.id));
+      case 'GetAll':
+        res.json({ jsonrpc: '2.0', result: ordersList, id });
+        break;
+
+      case 'GetById':
+        const order = ordersList.find(o => o.id === parseInt(params.id));
+
         if (!order) return res.json({ jsonrpc: '2.0', error: { code: -32602, message: 'Order not found!' }, id });
 
         const productDetails = await Promise.all(
-          order.products.map(productId => axios.get(`http://localhost:3001/rpc`, {
+          order.productsId.map(productId => axios.get(`http://localhost:3003/Products`, {
             method: 'POST',
             data: {
               jsonrpc: '2.0',
-              method: 'getProductById',
+              method: 'GetById',
               params: { id: productId },
-              id: 1
+              id: 8
             }
           }))
         );
         const products = productDetails.map(response => response.data.result);
+
         res.json({ jsonrpc: '2.0', result: { ...order, products }, id });
         break;
 
-      case 'createOrder':
-        const newOrder = {
-          id: orders.length + 1,
-          customer: params.customer,
-          products: params.products
-        };
-        orders.push(newOrder);
-        res.json({ jsonrpc: '2.0', result: newOrder, id });
-        break;
+      case 'Update':
+        const orderToUpdate = ordersList.find(o => o.id === parseInt(params.id));
 
-      case 'updateOrder':
-        const orderToUpdate = orders.find(o => o.id === parseInt(params.id));
         if (!orderToUpdate) return res.json({ jsonrpc: '2.0', error: { code: -32602, message: 'Order not found!' }, id });
 
         orderToUpdate.customer = params.customer;
-        orderToUpdate.products = params.products;
+        orderToUpdate.productsId = params.products;
+
         res.json({ jsonrpc: '2.0', result: orderToUpdate, id });
         break;
 
-      case 'deleteOrder':
-        orders = orders.filter(o => o.id !== parseInt(params.id));
+      case 'Delete':
+        ordersList = ordersList.filter(o => o.id !== parseInt(params.id));
+
         res.json({ jsonrpc: '2.0', result: 'Order deleted!', id });
         break;
 
@@ -73,44 +79,45 @@ app.post('/rpc', async (req, res) => {
   }
 });
 
-const PORT = 3000;
+const PORT = 3002;
+
 app.listen(PORT, () => {
-  console.log(`Order JSON-RPC API running on http://localhost:${PORT}`);
+  console.log(`Orders API running on http://localhost:${PORT}`);
 });
+
+// Criar pedido:
+// {
+//     "jsonrpc": "2.0",
+//     "method": "Create",
+//     "params": {
+//       "customer": "New Customer",
+//       "products": [1, 2]
+//     },
+//     "id": 1
+// }
 
 // Listar pedidos:
 // {
 //     "jsonrpc": "2.0",
-//     "method": "getAllOrders",
-//     "id": 1
+//     "method": "GetAll",
+//     "id": 2
 // }
 
 // Listar pedido por ID:
 // {
 //     "jsonrpc": "2.0",
-//     "method": "getOrderById",
+//     "method": "GetById",
 //     "params": { "id": 1 },
-//     "id": 2
-// }
-
-// Criar pedido:
-// {
-//     "jsonrpc": "2.0",
-//     "method": "createOrder",
-//     "params": {
-//       "customer": "Cliente Novo",
-//       "products": [1, 2]
-//     },
 //     "id": 3
 // }
 
 // Editar pedido:
 // {
 //     "jsonrpc": "2.0",
-//     "method": "updateOrder",
+//     "method": "Update",
 //     "params": {
 //       "id": 1,
-//       "customer": "Cliente Atualizado",
+//       "customer": "Updated Customer",
 //       "products": [2, 3]
 //     },
 //     "id": 4
@@ -119,7 +126,7 @@ app.listen(PORT, () => {
 // Excluir pedido:
 // {
 //     "jsonrpc": "2.0",
-//     "method": "deleteOrder",
+//     "method": "Delete",
 //     "params": { "id": 1 },
 //     "id": 5
 // }

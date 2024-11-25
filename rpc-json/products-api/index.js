@@ -3,12 +3,12 @@ const app = express();
 
 app.use(express.json());
 
-let products = [
-  { id: 1, name: 'Produto 1', price: 100 },
-  { id: 2, name: 'Produto 2', price: 200 }
+let = [
+  { id: 1, name: 'Product 1', price: 10.0 },
+  { id: 2, name: 'Product 2', price: 7.5 }
 ];
 
-app.post('/rpc', (req, res) => {
+app.post('/Products', (req, res) => {
   const { jsonrpc, method, params, id } = req.body;
 
   if (jsonrpc !== '2.0') {
@@ -16,37 +16,43 @@ app.post('/rpc', (req, res) => {
   }
 
   switch (method) {
-    case 'getAllProducts':
-      res.json({ jsonrpc: '2.0', result: products, id });
-      break;
-
-    case 'getProductById':
-      const product = products.find(p => p.id === parseInt(params.id));
-      if (!product) return res.json({ jsonrpc: '2.0', error: { code: -32602, message: 'Product not found' }, id });
-      res.json({ jsonrpc: '2.0', result: product, id });
-      break;
-
-    case 'createProduct':
+    case 'Create':
       const newProduct = {
-        id: products.length + 1,
+        id: productsList.length + 1,
         name: params.name,
         price: params.price
       };
-      products.push(newProduct);
+
+      productsList.push(newProduct);
       res.json({ jsonrpc: '2.0', result: newProduct, id });
       break;
 
-    case 'updateProduct':
-      const productToUpdate = products.find(p => p.id === parseInt(params.id));
+    case 'GetAll':
+      res.json({ jsonrpc: '2.0', result: productsList, id });
+      break;
+
+    case 'GetById':
+      const product = productsList.find(p => p.id === parseInt(params.id));
+
+      if (!product) return res.json({ jsonrpc: '2.0', error: { code: -32602, message: 'Product not found' }, id });
+
+      res.json({ jsonrpc: '2.0', result: product, id });
+      break;
+
+    case 'Update':
+      const productToUpdate = productsList.find(p => p.id === parseInt(params.id));
+
       if (!productToUpdate) return res.json({ jsonrpc: '2.0', error: { code: -32602, message: 'Product not found' }, id });
 
       productToUpdate.name = params.name;
       productToUpdate.price = params.price;
+
       res.json({ jsonrpc: '2.0', result: productToUpdate, id });
       break;
 
-    case 'deleteProduct':
-      products = products.filter(p => p.id !== parseInt(params.id));
+    case 'Delete':
+      productsList = productsList.filter(p => p.id !== parseInt(params.id));
+
       res.json({ jsonrpc: '2.0', result: 'Produto deletado', id });
       break;
 
@@ -55,45 +61,46 @@ app.post('/rpc', (req, res) => {
   }
 });
 
-const PORT = 3001;
+const PORT = 3003;
+
 app.listen(PORT, () => {
-  console.log(`Products JSON-RPC API running on http://localhost:${PORT}`);
+  console.log(`Products API running on http://localhost:${PORT}`);
 });
+
+// Criar produto:
+// {
+//   "jsonrpc": "2.0",
+//   "method": "Create",
+//   "params": {
+//     "name": "New Product",
+//     "price": 17.5
+//   },
+//   "id": 6
+// }
 
 // Listar produtos:
 // {
 //   "jsonrpc": "2.0",
-//   "method": "getAllProducts",
-//   "id": 6
+//   "method": "GetAll",
+//   "id": 7
 // }
 
 // Listar produto por ID:
 // {
 //   "jsonrpc": "2.0",
-//   "method": "getProductById",
+//   "method": "GetById",
 //   "params": { "id": 1 },
-//   "id": 7
-// }
-
-// Criar produto:
-// {
-//   "jsonrpc": "2.0",
-//   "method": "createProduct",
-//   "params": {
-//     "name": "Produto Novo",
-//     "price": 150
-//   },
 //   "id": 8
 // }
 
 // Editar produto:
 // {
 //   "jsonrpc": "2.0",
-//   "method": "updateProduct",
+//   "method": "Update",
 //   "params": {
 //     "id": 1,
-//     "name": "Produto Atualizado",
-//     "price": 120
+//     "name": "Updated Product",
+//     "price": 2.5
 //   },
 //   "id": 9
 // }
@@ -101,7 +108,7 @@ app.listen(PORT, () => {
 // Excluir produto:
 // {
 //   "jsonrpc": "2.0",
-//   "method": "deleteProduct",
+//   "method": "Delete",
 //   "params": { "id": 1 },
 //   "id": 10
 // }
