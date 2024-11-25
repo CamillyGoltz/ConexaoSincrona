@@ -5,7 +5,7 @@ const app = express();
 
 app.use(express.json());
 
-let orders = [
+let ordersList = [
   { id: 1, customer: 'Customer 1', products: [1, 2] },
   { id: 2, customer: 'Customer 2', products: [2] }
 ];
@@ -30,7 +30,7 @@ app.get('/Orders/GetAll', (req, res) => {
 });
 
 app.get('/Orders/GetById/:id', async (req, res) => {
-  const order = orders.find(o => o.id === parseInt(req.params.id));
+  const order = ordersList.find(o => o.id === parseInt(req.params.id));
   if (!order) return res.status(404).json({ message: 'Order not found' });
 
   try {
@@ -46,7 +46,7 @@ app.get('/Orders/GetById/:id', async (req, res) => {
 
 app.post('/Orders/Create', async (req, res) => {
   const newOrder = {
-    id: orders.length + 1,
+    id: ordersList.length + 1,
     customer: req.body.customer,
     products: req.body.products
   };
@@ -63,7 +63,7 @@ app.post('/Orders/Create', async (req, res) => {
 });
 
 app.put('/Orders/Update/:id', (req, res) => {
-  const order = orders.find(o => o.id === parseInt(req.params.id));
+  const order = ordersList.find(o => o.id === parseInt(req.params.id));
   if (!order) return res.status(404).json({ message: 'Order not found' });
 
   order.customer = req.body.customer;
@@ -72,7 +72,7 @@ app.put('/Orders/Update/:id', (req, res) => {
 });
 
 app.delete('/Orders/Delete/:id', (req, res) => {
-  orders = orders.filter(o => o.id !== parseInt(req.params.id));
+  orders = ordersList.filter(o => o.id !== parseInt(req.params.id));
   res.status(204).send();
 });
 
