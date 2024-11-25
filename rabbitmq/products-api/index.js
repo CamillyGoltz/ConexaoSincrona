@@ -4,7 +4,7 @@ const app = express();
 
 app.use(express.json());
 
-let products = [
+let productsList = [
   { id: 1, name: 'Product 1', price: 10.0 },
   { id: 2, name: 'Product 2', price: 7.5 }
 ];
@@ -28,7 +28,7 @@ async function processOrder(msg) {
   console.log('Order received:', order);
 
   const orderDetails = order.products.map(productId => {
-    const product = products.find(p => p.id === productId);
+    const product = productsList.find(p => p.id === productId);
     return product ? product : { message: `Product ${productId} not found` };
   });
 
@@ -42,27 +42,27 @@ async function consumeOrders() {
 }
 
 app.get('/Products/GetAll', (req, res) => {
-  res.json(products);
+  res.json(productsList);
 });
 
 app.get('/Products/GetById/:id', (req, res) => {
-  const product = products.find(p => p.id === parseInt(req.params.id));
+  const product = productsList.find(p => p.id === parseInt(req.params.id));
   if (!product) return res.status(404).json({ message: 'Product not found' });
   res.json(product);
 });
 
 app.post('/Products/Create', (req, res) => {
   const newProduct = {
-    id: products.length + 1,
+    id: productsList.length + 1,
     name: req.body.name,
     price: req.body.price
   };
-  products.push(newProduct);
+  productsList.push(newProduct);
   res.status(201).json(newProduct);
 });
 
 app.put('/Products/Update/:id', (req, res) => {
-  const product = products.find(p => p.id === parseInt(req.params.id));
+  const product = productsList.find(p => p.id === parseInt(req.params.id));
   if (!product) return res.status(404).json({ message: 'Product not found' });
 
   product.name = req.body.name;
@@ -71,7 +71,7 @@ app.put('/Products/Update/:id', (req, res) => {
 });
 
 app.delete('/Products/Delete/:id', (req, res) => {
-  products = products.filter(p => p.id !== parseInt(req.params.id));
+  products = productsList.filter(p => p.id !== parseInt(req.params.id));
   res.status(204).send();
 });
 
