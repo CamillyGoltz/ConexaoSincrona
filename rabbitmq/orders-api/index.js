@@ -50,7 +50,7 @@ app.post('/Orders/Create', async (req, res) => {
     customer: req.body.customer,
     products: req.body.products
   };
-  orders.push(newOrder);
+  ordersList.push(newOrder);
 
   // Enviar a mensagem para o RabbitMQ, notificando sobre o novo pedido
   try {
