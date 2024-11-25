@@ -6,7 +6,7 @@
 
 2. Products API: consome as requisições e responde pela fila orderQueue;
 
-![Diagrama em branco](https://github.com/user-attachments/assets/ef317bc4-be96-4145-b69b-ba1fe54d53b6)
+![Diagrama do Fluxo](https://github.com/user-attachments/assets/ef317bc4-be96-4145-b69b-ba1fe54d53b6)
 
 ## Rodar servidores:
 
