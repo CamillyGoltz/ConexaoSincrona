@@ -25,13 +25,9 @@ Os credenciais padrão para login são:
 * Username: guest
 * Password: guest
 
-
 ### 2. Orders API
 ```
-cd rabbitmq
-```
-```
-cd orders-api
+cd rabbitmq/orders-api
 ```
 
 ```
@@ -41,13 +37,9 @@ npm i
 npm start
 ```
 
-
 ### 3. Products API
 ```
-cd rabbitmq
-```
-```
-cd products-api
+cd rabbitmq/products-api
 ```
 
 ```
