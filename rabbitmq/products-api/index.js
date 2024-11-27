@@ -86,4 +86,6 @@ const PORT = 3005;
 
 app.listen(PORT, () => {
   console.log(`Products API running on http://localhost:${PORT}`);
+  connectRabbitMQ();
+  consumeOrders();
 });
